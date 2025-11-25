@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // You can add additional logic here to handle the username change
         // regex to check username has 1 capital letter, 1 number, 1 special character, and at least 8 characters length
         const username = usernameInput.value;
-        const usernameRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+        const usernameRegex = /^(?=.[A-Z])(?=.\d)(?=.[!@#$%^&*~])[A-Za-z\d!@#$%^&*~]{8,}$/;
         if (!usernameRegex.test(username)) {
             usernameInput.style.borderColor = "red"; // Set border color to red
         } else {
