@@ -7,6 +7,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 require("dotenv").config();
 
+const rateLimit = require("express-rate-limit");
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
 // Middleware
 app.use(bodyParser.json({ limit: "10mb" })); // To handle large chart images
 app.use(cors());
@@ -62,7 +69,6 @@ app.post("/send-email", async (req, res) => {
 
         await transporter.sendMail(mailOptions);
 
-        await transporter.sendMail(mailOptions);
         console.log("Email sent successfully!");
         res.status(200).json({ message: "Email sent successfully!" });
     } catch (error) {
@@ -76,9 +82,3 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-const rateLimit = require("express-rate-limit");
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
