@@ -1,69 +1,57 @@
-document.addEventListener("DOMContentLoaded", function () {
-    
-    // input with id "username" onchange
+document.addEventListener("DOMContentLoaded", () => {
     const usernameInput = document.getElementById("username");
-    usernameInput.addEventListener("input", function () {
+
+    usernameInput?.addEventListener("input", () => {
         console.log("Username changed to:", usernameInput.value);
-    
-        // Corrected regex to check username has 1 capital letter, 1 number, 1 special character, and at least 8 characters length
+
         const username = usernameInput.value;
         const usernameRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*~])[A-Za-z\d!@#$%^&*~]{8,}$/;
-    
-        if (!usernameRegex.test(username)) {
-            usernameInput.style.borderColor = "red"; // Set border color to red for invalid input
-        } else {
-            usernameInput.style.borderColor = "green"; // Set border color to green for valid input
-        }
+
+        usernameInput.style.borderColor = usernameRegex.test(username) ? "green" : "red";
     });
 
     let barChart;
 
-    // Function to retrieve income and expense data for each month
-    function getMonthlyData() {
+    const getMonthlyData = () => {
         const months = [
-            "january",
-            "february",
-            "march",
-            "april",
-            "may",
-            "june",
-            "july",
-            "august",
-            "september",
-            "october",
-            "november",
-            "december",
+            "january", "february", "march", "april", "may", "june",
+            "july", "august", "september", "october", "november", "december"
         ];
 
-        const data = {};
-
-        months.forEach((month) => {
+        return months.reduce((data, month) => {
             const incomeInput = document.getElementById(`${month}-income`);
             const expensesInput = document.getElementById(`${month}-expenses`);
 
-            const income = incomeInput ? parseFloat(incomeInput.value) || 0 : 0;
-            const expenses = expensesInput ? parseFloat(expensesInput.value) || 0 : 0;
+            // Generate default values if inputs are empty
+            const defaultExpenses = Math.floor(Math.random() * (800 - 200 + 1)) + 200; // Random value between 200 and 800
+            const defaultIncome = Math.floor(Math.random() * (1000 - (defaultExpenses + 1) + 1)) + (defaultExpenses + 1); // Greater than expenses
 
-            data[month] = {
-                income,
-                expenses,
-            };
-        });
+            const income = incomeInput ? parseFloat(incomeInput.value) || defaultIncome : defaultIncome;
+            const expenses = expensesInput ? parseFloat(expensesInput.value) || defaultExpenses : defaultExpenses;
 
-        console.log("Retrieved Monthly Data:", data); // Debugging line
-        return data;
-    }
+            data[month] = { income, expenses };
 
-    // Function to initialize the bar chart
-    function initializeChart() {
-        console.log("Initializing Chart..."); // Debugging line
-        const ctx = document.getElementById("barChart").getContext("2d");
-    
-        // Custom plugin to draw income and expense values on the chart
+            // Set default values in the input fields if empty
+            if (incomeInput && !incomeInput.value) incomeInput.value = income;
+            if (expensesInput && !expensesInput.value) expensesInput.value = expenses;
+
+            return data;
+        }, {});
+    };
+
+    const initializeChart = () => {
+        console.log("Initializing Chart...");
+        const ctx = document.getElementById("barChart")?.getContext("2d");
+
+        if (!ctx) {
+            console.error("Canvas context not found.");
+            return;
+        }
+
         const drawValuesPlugin = {
             id: "drawValues",
             afterDatasetsDraw(chart) {
-                const ctx = chart.ctx;
+                const { ctx } = chart;
                 chart.data.datasets.forEach((dataset, datasetIndex) => {
                     const meta = chart.getDatasetMeta(datasetIndex);
                     meta.data.forEach((bar, index) => {
@@ -71,44 +59,32 @@ document.addEventListener("DOMContentLoaded", function () {
                         ctx.fillStyle = "black";
                         ctx.font = "12px Arial";
                         ctx.textAlign = "center";
-                        ctx.fillText(value, bar.x, bar.y - 10); // Draw the value above the bar
+                        ctx.fillText(value, bar.x, bar.y - 10);
                     });
                 });
             },
         };
-    
-        // Register the plugin
+
         Chart.register(drawValuesPlugin);
-    
-        // Initialize the chart
+
         barChart = new Chart(ctx, {
             type: "bar",
             data: {
                 labels: [
-                    "January",
-                    "February",
-                    "March",
-                    "April",
-                    "May",
-                    "June",
-                    "July",
-                    "August",
-                    "September",
-                    "October",
-                    "November",
-                    "December",
+                    "January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"
                 ],
                 datasets: [
                     {
                         label: "Income",
-                        data: [], // Initially empty
+                        data: [],
                         backgroundColor: "rgba(75, 192, 192, 0.6)",
                         borderColor: "rgba(75, 192, 192, 1)",
                         borderWidth: 1,
                     },
                     {
                         label: "Expenses",
-                        data: [], // Initially empty
+                        data: [],
                         backgroundColor: "rgba(255, 99, 132, 0.6)",
                         borderColor: "rgba(255, 99, 132, 1)",
                         borderWidth: 1,
@@ -128,65 +104,94 @@ document.addEventListener("DOMContentLoaded", function () {
                     },
                 },
             },
-            plugins: [drawValuesPlugin], // Add the plugin to the chart
+            plugins: [drawValuesPlugin],
         });
-    }
+    };
 
-    // Function to update the chart with new data
-    function updateChart() {
+    const updateChart = () => {
         const monthlyData = getMonthlyData();
 
-        // Extract income and expenses data
-        const incomeData = [];
-        const expensesData = [];
-        Object.keys(monthlyData).forEach((month) => {
-            incomeData.push(monthlyData[month].income);
-            expensesData.push(monthlyData[month].expenses);
-        });
+        const incomeData = Object.values(monthlyData).map(({ income }) => income);
+        const expensesData = Object.values(monthlyData).map(({ expenses }) => expenses);
 
-        console.log("Updating Chart with Data:", { incomeData, expensesData }); // Debugging line
+        console.log("Updating Chart with Data:", { incomeData, expensesData });
 
-        // Update the chart datasets
-        barChart.data.datasets[0].data = incomeData;
-        barChart.data.datasets[1].data = expensesData;
+        if (barChart) {
+            barChart.data.datasets[0].data = incomeData;
+            barChart.data.datasets[1].data = expensesData;
+            barChart.update();
+        }
+    };
 
-        // Refresh the chart
-        barChart.update();
-    }
+    document.getElementById("chart-tab")?.addEventListener("shown.bs.tab", () => {
+        console.log("Chart tab clicked!");
 
-    // Add an event listener to the Chart tab
-    const chartTab = document.getElementById("chart-tab");
-    chartTab.addEventListener("shown.bs.tab", function () {
-        console.log("Chart tab clicked!"); // Debugging line
-
-        // Initialize the chart only once
         if (!barChart) {
-            console.log("Initializing chart..."); // Debugging line
+            console.log("Initializing chart...");
             initializeChart();
         }
 
-        console.log("Updating chart..."); // Debugging line
-        // Update the chart whenever the Chart tab is clicked
+        console.log("Updating chart...");
         updateChart();
-
-        // Resize the chart to ensure it renders properly
-        barChart.resize();
+        barChart?.resize();
     });
 
-     // Add functionality to download the chart
-    const downloadButton = document.getElementById("downloadChart");
-    downloadButton.addEventListener("click", function () {
+    document.getElementById("downloadChart")?.addEventListener("click", () => {
         if (barChart) {
-            // Convert the chart to a Base64 image
             const image = barChart.toBase64Image();
-    
-            // Create a temporary link element
             const link = document.createElement("a");
             link.href = image;
-            link.download = "chart_with_values.png"; // Set the file name
-            link.click(); // Trigger the download
+            link.download = "chart_with_values.png";
+            link.click();
         } else {
             console.error("Chart is not initialized yet.");
+        }
+    });
+
+       document.getElementById("sendEmail")?.addEventListener("click", async () => {
+        const email = document.getElementById("emailAddress")?.value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+        // Validate the email address
+        if (!emailRegex.test(email)) {
+            alert("Invalid email address. Please enter a valid email.");
+            return; // Stop execution if the email is invalid
+        }
+    
+        if (!barChart) {
+            alert("Chart is not initialized yet.");
+            return;
+        }
+    
+        // Convert chart to image
+        barChart.update(); // Ensure the chart is fully updated
+        const chartImage = barChart.toBase64Image("image/png", 0.8); // Reduce quality to 80%
+    
+        // Collect data
+        const monthlyData = getMonthlyData();
+        const dataSummary = Object.entries(monthlyData)
+            .map(([month, { income, expenses }]) => `${month}: Income - $${income}, Expenses - $${expenses}`)
+            .join("\n");
+    
+        try {
+            // Send data to the backend
+            const response = await fetch("http://localhost:3000/send-email", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, chartImage, dataSummary }),
+            });
+    
+            const result = await response.json();
+            if (response.ok) {
+                alert("Email sent successfully!");
+            } else {
+                alert(`Failed to send email: ${result.error}`);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("An error occurred while sending the email.");
         }
     });
 });
